@@ -2,3 +2,5 @@
 *.pyc
 *.wav
 features
+.DS_Store
+notes/.ipynb*

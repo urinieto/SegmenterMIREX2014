@@ -12,3 +12,5 @@ Requirements
 * NumPy 1.8.2
 * SciPy 0.14.0
 * joblib 0.8.2
+* mir_eval (for evaluating only)
+* Pandas 0.14.1 (for evaluating only)
