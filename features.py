@@ -82,7 +82,7 @@ def compute_beatsync_features(ticks, audio):
     mfcc = MFCC.compute_features(audio)
     logging.info("Computing Beat-synchronous HPCPs...")
     hpcp = HPCP.compute_features(audio)
-    #plt.imshow(hpcp.T, interpolation="nearest", aspect="auto"); plt.show()
+    logging.info("Computing Beat-synchronous Tonnetz...")
     tonnetz = utils.chroma_to_tonnetz(hpcp)
 
     return mfcc.tolist(), hpcp.tolist(), tonnetz.tolist()

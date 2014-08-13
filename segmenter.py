@@ -13,13 +13,35 @@ import time
 import features
 import pylab as plt
 import utils
+from scipy.ndimage import filters
 
 # Algorithm Parameters
 M = 4       # Median filter for the audio features (in beats)
 Mg = 32     # Gaussian kernel size
+L = 16      # Size of the median filter for the adaptive threshold
 
 
-def process(audio_path, output_path):
+def pick_peaks(nc, L=16, plot=False):
+    """Obtain peaks from a novelty curve using an adaptive threshold."""
+    offset = nc.mean() / 3.
+    th = filters.median_filter(nc, size=L) + offset
+    peaks = []
+    for i in xrange(1, nc.shape[0] - 1):
+        # is it a peak?
+        if nc[i - 1] < nc[i] and nc[i] > nc[i + 1]:
+            # is it above the threshold?
+            if nc[i] > th[i]:
+                peaks.append(i)
+    if plot:
+        plt.plot(nc)
+        plt.plot(th)
+        for peak in peaks:
+            plt.axvline(peak, color="m")
+        plt.show()
+    return peaks
+
+
+def process(audio_path, output_path, plot=False):
     """Main process to segment the audio file and save the results in the
         specified output."""
 
@@ -42,8 +64,9 @@ def process(audio_path, output_path):
 
     # Compute the novelty curve
     nc = utils.compute_nc(S, G)
-    plt.plot(nc)
-    plt.show()
+
+    # Find peaks in the novelty curve
+    est_bounds = pick_peaks(nc, L=L, plot=plot)
 
 
 def main():
