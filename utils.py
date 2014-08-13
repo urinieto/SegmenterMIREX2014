@@ -14,6 +14,7 @@ import os
 from scipy.spatial import distance
 from scipy.ndimage import filters
 from scipy import signal
+import pylab as plt
 
 
 def lognormalize_chroma(C):
@@ -161,3 +162,23 @@ def chroma_to_tonnetz(C):
 def most_frequent(x):
     """Returns the most frequent value in x."""
     return np.argmax(np.bincount(x))
+
+
+def pick_peaks(nc, L=16, plot=False):
+    """Obtain peaks from a novelty curve using an adaptive threshold."""
+    offset = nc.mean() / 3
+    th = filters.median_filter(nc, size=L) + offset
+    peaks = []
+    for i in xrange(1, nc.shape[0] - 1):
+        # is it a peak?
+        if nc[i - 1] < nc[i] and nc[i] > nc[i + 1]:
+            # is it above the threshold?
+            if nc[i] > th[i]:
+                peaks.append(i)
+    if plot:
+        plt.plot(nc)
+        plt.plot(th)
+        for peak in peaks:
+            plt.axvline(peak, color="m")
+        plt.show()
+    return peaks
