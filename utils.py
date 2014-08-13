@@ -156,3 +156,8 @@ def chroma_to_tonnetz(C):
                 T[i, d] = 1 / denom * (phi[d, :] * C[i, :]).sum()
 
     return T
+
+
+def most_frequent(x):
+    """Returns the most frequent value in x."""
+    return np.argmax(np.bincount(x))
