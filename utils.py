@@ -1,5 +1,5 @@
 """
-Useful functions that are common in MSAF
+Useful functions that are quite common for music segmentation
 """
 
 __author__ = "Oriol Nieto"

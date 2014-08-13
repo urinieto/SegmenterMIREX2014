@@ -41,7 +41,22 @@ def pick_peaks(nc, L=16, plot=False):
     return peaks
 
 
-def process(audio_path, output_path, plot=False):
+def write_results(out_path, bound_times, labels):
+    """Writes the results into the output file."""
+    # Sanity check
+    assert len(bound_times) - 1 == len(labels)
+
+    logging.info("Writing results in %s..." % out_path)
+
+    bound_inters = zip(bound_times[:-1], bound_times[1:])
+    out_str = ""
+    for (start, end), label in zip(bound_inters, labels):
+        out_str += str(start) + "\t" + str(end) + "\t" + str(label) + "\n"
+    with open(out_path, "w") as f:
+        f.write(out_str)
+
+
+def process(audio_path, out_path, plot=False):
     """Main process to segment the audio file and save the results in the
         specified output."""
 
@@ -66,7 +81,17 @@ def process(audio_path, output_path, plot=False):
     nc = utils.compute_nc(S, G)
 
     # Find peaks in the novelty curve
-    est_bounds = pick_peaks(nc, L=L, plot=plot)
+    est_bound_idxs = pick_peaks(nc, L=L, plot=plot)
+
+    # Get boundary times while adding first and last boundary
+    est_bound_times = np.concatenate(([feats["beats"][0]],
+                                      feats["beats"][est_bound_idxs],
+                                      [feats["beats"][-1]]))
+
+    # Write results
+    print est_bound_times
+    est_labels = np.ones(len(est_bound_times) - 1, dtype=int)
+    write_results(out_path, est_bound_times, est_labels)
 
 
 def main():
@@ -79,9 +104,9 @@ def main():
                         help="Path to the input audio file")
     parser.add_argument("-o",
                         action="store",
-                        dest="output_path",
+                        dest="out_path",
                         help="Path to the output results file",
-                        default="output.txt")
+                        default="output.lab")
     args = parser.parse_args()
     start_time = time.time()
 
@@ -90,7 +115,7 @@ def main():
         level=logging.INFO)
 
     # Run the algorithm
-    process(args.audio_path, args.output_path)
+    process(args.audio_path, args.out_path)
 
     # Done!
     logging.info("Done! Took %.2f seconds." % (time.time() - start_time))
