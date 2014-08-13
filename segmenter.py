@@ -21,7 +21,7 @@ import mir_eval
 
 # Algorithm Parameters
 h = 8      # Size of median filter for features in C-NMF
-R = 11      # Size of the median filter for the activation matrix C-NMF
+R = 15      # Size of the median filter for the activation matrix C-NMF
 
 
 def write_results(out_path, bound_times, labels):
