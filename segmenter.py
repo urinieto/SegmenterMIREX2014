@@ -16,7 +16,7 @@ import utils
 from scipy.ndimage import filters
 
 # Algorithm Parameters
-M = 4       # Median filter for the audio features (in beats)
+M = 2       # Median filter for the audio features (in beats)
 Mg = 32     # Gaussian kernel size
 L = 16      # Size of the median filter for the adaptive threshold
 
@@ -56,13 +56,9 @@ def write_results(out_path, bound_times, labels):
         f.write(out_str)
 
 
-def process(audio_path, out_path, plot=False):
-    """Main process to segment the audio file and save the results in the
-        specified output."""
-
-    # Get features and stack them
-    feats = features.compute_all_features(audio_path)
-    F = np.hstack((feats["hpcp"], feats["mfcc"], feats["tonnetz"]))
+def foote(F, plot=False):
+    """Computes the Foote segmentator."""
+    # Filter
     F = utils.median_filter(F, M=M)
 
     # Self Similarity Matrix
@@ -81,7 +77,20 @@ def process(audio_path, out_path, plot=False):
     nc = utils.compute_nc(S, G)
 
     # Find peaks in the novelty curve
-    est_bound_idxs = pick_peaks(nc, L=L, plot=plot)
+    return pick_peaks(nc, L=L, plot=plot)
+
+
+def process(audio_path, out_path, plot=False):
+    """Main process to segment the audio file and save the results in the
+        specified output."""
+
+    # Get features and stack them
+    feats = features.compute_all_features(audio_path)
+    F = np.hstack((feats["hpcp"], feats["mfcc"], feats["tonnetz"]))
+    F = np.hstack((feats["hpcp"], feats["mfcc"]))
+
+    # Estimate bounds using Foote method
+    est_bound_idxs = foote(F)
 
     # Get boundary times while adding first and last boundary
     est_bound_times = np.concatenate(([feats["beats"][0]],
