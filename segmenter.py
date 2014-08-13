@@ -11,12 +11,15 @@ import logging
 import numpy as np
 import time
 import features
-import os
 import pymf
 import pylab as plt
+import scipy.cluster.vq as vq
 
 import utils
-import mir_eval
+
+# Local stuff
+import utils_2dfmc as utils2d
+from xmeans import XMeans
 
 
 # Algorithm Parameters
@@ -37,6 +40,84 @@ def write_results(out_path, bound_times, labels):
         out_str += str(start) + "\t" + str(end) + "\t" + str(label) + "\n"
     with open(out_path, "w") as f:
         f.write(out_str)
+
+
+def get_pcp_segments(PCP, bound_idxs):
+    """Returns a set of segments defined by the bound_idxs."""
+    pcp_segments = []
+    for i in xrange(len(bound_idxs)-1):
+        pcp_segments.append(PCP[bound_idxs[i]:bound_idxs[i+1], :])
+    return pcp_segments
+
+
+def pcp_segments_to_2dfmc_max(pcp_segments):
+    """From a list of PCP segments, return a list of 2D-Fourier Magnitude
+        Coefs using the maximumg segment size and zero pad the rest."""
+    if len(pcp_segments) == 0:
+        return []
+
+    # Get maximum segment size
+    max_len = max([pcp_segment.shape[0] for pcp_segment in pcp_segments])
+
+    OFFSET = 4
+    fmcs = []
+    for pcp_segment in pcp_segments:
+        # Zero pad if needed
+        X = np.zeros((max_len, 12))
+        #X[:pcp_segment.shape[0],:] = pcp_segment
+        if pcp_segment.shape[0] <= OFFSET:
+            X[:pcp_segment.shape[0], :] = pcp_segment
+        else:
+            X[:pcp_segment.shape[0]-OFFSET, :] = \
+                pcp_segment[OFFSET/2:-OFFSET/2, :]
+
+        # 2D-FMC
+        try:
+            fmcs.append(utils2d.compute_ffmc2d(X))
+        except:
+            logging.warning("Couldn't compute the 2D Fourier Transform")
+            fmcs.append(np.zeros((X.shape[0] * X.shape[1]) / 2 + 1))
+
+        # Normalize
+        #fmcs[-1] = fmcs[-1] / fmcs[-1].max()
+
+    return np.asarray(fmcs)
+
+
+def compute_labels_kmeans(fmcs, k=6):
+    # Removing the higher frequencies seem to yield better results
+    fmcs = fmcs[:, fmcs.shape[1]/2:]
+
+    fmcs = np.log1p(fmcs)
+    wfmcs = vq.whiten(fmcs)
+
+    dic, dist = vq.kmeans(wfmcs, k, iter=100)
+    labels, dist = vq.vq(wfmcs, dic)
+
+    return labels
+
+
+def compute_similarity(PCP, bound_idxs, xmeans=False, k=5):
+    """Main function to compute the segment similarity of file file_struct."""
+
+    # Get PCP segments
+    pcp_segments = get_pcp_segments(PCP, bound_idxs)
+
+    # Get the 2d-FMCs segments
+    fmcs = pcp_segments_to_2dfmc_max(pcp_segments)
+    if fmcs == []:
+        return np.arange(len(bound_idxs) - 1)
+
+    # Compute the labels using kmeans
+    if xmeans:
+        xm = XMeans(fmcs, plot=False)
+        k = xm.estimate_K_knee(th=0.01, maxK=8)
+    est_labels = compute_labels_kmeans(fmcs, k=k)
+
+    # Plot results
+    #plot_pcp_wgt(PCP, bound_idxs)
+
+    return est_labels
 
 
 def cnmf(S, rank, niter=500):
@@ -131,24 +212,24 @@ def cnmf_segmentation(X, rank, R, niter=300):
     return bound_idxs
 
 
-def read_ref_bounds(audio_path, beats):
-    """Reads the boundaries based on the audio path. Warning: this is a hack"""
-    ref_file = os.path.join(
-        "beatlesISO", os.path.basename(audio_path).replace(".wav", ".lab"))
-    ref_inters, labels = mir_eval.io.load_labeled_intervals(
-        ref_file, delimiter="\t")
-    ref_times = np.concatenate((ref_inters[:, 0], [ref_inters[-1][-1]]))
+#def read_ref_bounds(audio_path, beats):
+    #"""Reads the boundaries based on the audio path. Warning: this is a hack"""
+    #ref_file = os.path.join(
+        #"beatlesISO", os.path.basename(audio_path).replace(".wav", ".lab"))
+    #ref_inters, labels = mir_eval.io.load_labeled_intervals(
+        #ref_file, delimiter="\t")
+    #ref_times = np.concatenate((ref_inters[:, 0], [ref_inters[-1][-1]]))
 
-    ref_idxs = []
-    for ref_time in ref_times:
-        k = 0
-        for beat in beats:
-            if ref_time <= beat:
-                break
-            k += 1
-        ref_idxs.append(k)
+    #ref_idxs = []
+    #for ref_time in ref_times:
+        #k = 0
+        #for beat in beats:
+            #if ref_time <= beat:
+                #break
+            #k += 1
+        #ref_idxs.append(k)
 
-    return ref_idxs
+    #return ref_idxs
 
 
 def process(audio_path, out_path, plot=False):
@@ -161,22 +242,16 @@ def process(audio_path, out_path, plot=False):
     F = np.hstack((feats["tonnetz"], feats["mfcc"]))
     F = np.hstack((feats["hpcp"], feats["mfcc"]))
 
-    #ref_bound_idxs = read_ref_bounds(audio_path, feats["beats"])
-    #S = utils.compute_ssm(F)
-    #plt.imshow(S, interpolation="nearest", aspect="auto")
-    #for bound in ref_bound_idxs:
-        #plt.axhline(bound, color="g", linewidth=2)
-        #plt.axvline(bound, color="g", linewidth=2)
-    #plt.show()
-
-    ## Estimate bounds using C-NMF method
+    # Estimate bounds_idx
+    logging.info("Estimating Boundaries...")
     est_bound_idxs = cnmf_segmentation(F, rank=4, R=R)
 
-    #for bound in est_bound_idxs:
-        #plt.axvline(bound, color="m", ymin=0.5)
-    #for bound in ref_bound_idxs:
-        #plt.axvline(bound, color="g", alpha=0.6, linewidth=2)
-    #plt.show()
+    # Compute the labels from all the boundaries
+    logging.info("Estimating Segment Similarity (Labeling)...")
+    all_est_bound_idxs = np.unique(np.concatenate(([0], est_bound_idxs,
+                                                   [len(F)])))
+    est_labels = compute_similarity(feats["hpcp"], all_est_bound_idxs,
+                                    xmeans=True)
 
     # Get boundary times while adding first and last boundary
     est_bound_times = np.concatenate(([feats["beats"][0]],
@@ -185,8 +260,6 @@ def process(audio_path, out_path, plot=False):
     est_bound_times = np.unique(est_bound_times)
 
     # Write results
-    print est_bound_times
-    est_labels = np.ones(len(est_bound_times) - 1, dtype=int)
     write_results(out_path, est_bound_times, est_labels)
 
 
