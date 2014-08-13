@@ -20,9 +20,9 @@ def eval_track(ref_file, est_file):
 
     # Read intervals
     delimiter = "\t"
-    ref_inters, labels = mir_eval.io.load_labeled_intervals(
+    ref_inters, ref_labels = mir_eval.io.load_labeled_intervals(
         ref_file, delimiter=delimiter)
-    est_inters, labels = mir_eval.io.load_labeled_intervals(
+    est_inters, est_labels = mir_eval.io.load_labeled_intervals(
         est_file, delimiter=delimiter)
 
     # Remove the first and last stupid boundary from the ISO Beatles if needed
@@ -33,6 +33,8 @@ def eval_track(ref_file, est_file):
 
     # Compute evaluations and store them in a dictionary
     evals = {}
+
+    # Boundary Eval
     evals["Hit05_P"], evals["Hit05_R"], evals["Hit05_F"] = \
         mir_eval.boundary.detection(ref_inters, est_inters, window=0.5)
     evals["Hit3_P"], evals["Hit3_R"], evals["Hit3_F"] = \
@@ -43,6 +45,18 @@ def eval_track(ref_file, est_file):
     evals["Hit3t_P"], evals["Hit3t_R"], evals["Hit3t_F"] = \
         mir_eval.boundary.detection(ref_inters, est_inters, window=3,
                                     trim=True)
+
+    # Similarity Eval
+    ref_inters, ref_labels = mir_eval.util.adjust_intervals(
+        ref_inters, ref_labels, t_min=0)
+    est_inters, est_labels = mir_eval.util.adjust_intervals(
+        est_inters, est_labels, t_min=0, t_max=ref_inters.max())
+    evals["Pwf_P"], evals["Pwf_R"], evals["Pwf_F"] = \
+        mir_eval.structure.pairwise(ref_inters, ref_labels,
+                                    est_inters, est_labels)
+    evals["NCE_o"], evals["NCE_u"], evals["NCE_F"] = \
+        mir_eval.structure.nce(ref_inters, ref_labels,
+                               est_inters, est_labels)
     return evals
 
 
