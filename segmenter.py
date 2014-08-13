@@ -15,21 +15,22 @@ import pylab as plt
 import utils
 
 
-def process(audio_path, output_path, audio_beats):
+def process(audio_path, output_path):
     """Main process to segment the audio file and save the results in the
         specified output."""
 
+    # Get features and stack them
     feats = features.compute_all_features(audio_path, audio_beats)
+    F = np.hstack((feats["hpcp"], feats["mfcc"], feats["tonnetz"]))
+    F = utils.median_filter(F, M=4)
 
     #plt.imshow(feats["mfcc"].T, interpolation="nearest", aspect="auto")
     #plt.imshow(feats["hpcp"].T, interpolation="nearest", aspect="auto")
     #plt.show()
 
-    # Stack features
-    F = np.hstack((feats["hpcp"], feats["mfcc"], feats["tonnetz"]))
     S = utils.compute_ssm(F)
     #S = utils.compute_ssm(feats["tonnetz"])
-    plt.imshow(S, interpolation="nearest", aspect="auto")
+    plt.imshow(S, interpolation="nearest")
     plt.show()
 
 
@@ -46,11 +47,6 @@ def main():
                         dest="output_path",
                         help="Path to the output results file",
                         default="output.txt")
-    parser.add_argument("-a",
-                        action="store_true",
-                        dest="audio_beats",
-                        help="Output audio file with estimated beats",
-                        default=False)
     args = parser.parse_args()
     start_time = time.time()
 
@@ -59,7 +55,7 @@ def main():
         level=logging.INFO)
 
     # Run the algorithm
-    process(args.audio_path, args.output_path, args.audio_beats)
+    process(args.audio_path, args.output_path)
 
     # Done!
     logging.info("Done! Took %.2f seconds." % (time.time() - start_time))

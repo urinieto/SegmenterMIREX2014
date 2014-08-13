@@ -12,6 +12,7 @@ import copy
 import numpy as np
 import os
 from scipy.spatial import distance
+from scipy.ndimage import filters
 
 
 def lognormalize_chroma(C):
@@ -40,6 +41,13 @@ def ensure_dir(directory):
     """Makes sure that the given directory exists."""
     if not os.path.exists(directory):
         os.makedirs(directory)
+
+
+def median_filter(X, M=8):
+    """Median filter along the first axis of the feature matrix X."""
+    for i in xrange(X.shape[1]):
+        X[:, i] = filters.median_filter(X[:, i], size=M)
+    return X
 
 
 def resample_mx(X, incolpos, outcolpos):
