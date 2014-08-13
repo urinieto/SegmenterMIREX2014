@@ -14,23 +14,35 @@ import features
 import pylab as plt
 import utils
 
+# Algorithm Parameters
+M = 4       # Median filter for the audio features (in beats)
+Mg = 32     # Gaussian kernel size
+
 
 def process(audio_path, output_path):
     """Main process to segment the audio file and save the results in the
         specified output."""
 
     # Get features and stack them
-    feats = features.compute_all_features(audio_path, audio_beats)
+    feats = features.compute_all_features(audio_path)
     F = np.hstack((feats["hpcp"], feats["mfcc"], feats["tonnetz"]))
-    F = utils.median_filter(F, M=4)
+    F = utils.median_filter(F, M=M)
+
+    # Self Similarity Matrix
+    S = utils.compute_ssm(F)
 
     #plt.imshow(feats["mfcc"].T, interpolation="nearest", aspect="auto")
     #plt.imshow(feats["hpcp"].T, interpolation="nearest", aspect="auto")
     #plt.show()
+    #plt.imshow(S, interpolation="nearest")
+    #plt.show()
 
-    S = utils.compute_ssm(F)
-    #S = utils.compute_ssm(feats["tonnetz"])
-    plt.imshow(S, interpolation="nearest")
+    # Compute gaussian kernel
+    G = utils.compute_gaussian_krnl(Mg)
+
+    # Compute the novelty curve
+    nc = utils.compute_nc(S, G)
+    plt.plot(nc)
     plt.show()
 
 

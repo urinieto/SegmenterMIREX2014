@@ -125,16 +125,16 @@ def compute_all_features(audio_file, audio_beats=False):
     # Load Audio
     logging.info("Loading audio file %s" % os.path.basename(audio_file))
     audio = ES.MonoLoader(filename=audio_file, sampleRate=SAMPLE_RATE)()
+    duration = len(audio) / float(SAMPLE_RATE)
 
     # Estimate Beats
+    features = {}
     ticks, conf = compute_beats(audio)
-    ticks = np.concatenate(([0], ticks))  # Add first time
+    ticks = np.concatenate(([0], ticks, [duration]))  # Add first and last time
     ticks = essentia.array(np.unique(ticks))
-
-    ticks, conf = ES.BeatTrackerMultiFeature()(audio)
+    features["beats"] = ticks.tolist()
 
     # Compute Beat-sync features
-    features = {}
     features["mfcc"], features["hpcp"], features["tonnetz"] = \
         compute_beatsync_features(ticks, audio)
 

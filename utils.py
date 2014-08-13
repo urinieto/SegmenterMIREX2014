@@ -13,6 +13,7 @@ import numpy as np
 import os
 from scipy.spatial import distance
 from scipy.ndimage import filters
+from scipy import signal
 
 
 def lognormalize_chroma(C):
@@ -48,6 +49,39 @@ def median_filter(X, M=8):
     for i in xrange(X.shape[1]):
         X[:, i] = filters.median_filter(X[:, i], size=M)
     return X
+
+
+def compute_gaussian_krnl(M):
+    """Creates a gaussian kernel following Foote's paper."""
+    g = signal.gaussian(M, M / 3., sym=True)
+    G = np.dot(g.reshape(-1, 1), g.reshape(1, -1))
+    G[M / 2:, :M / 2] = -G[M / 2:, :M / 2]
+    G[:M / 2, M / 2:] = -G[:M / 2, M / 2:]
+    return G
+
+
+def compute_ssm(X, metric="seuclidean"):
+    """Computes the self-similarity matrix of X."""
+    D = distance.pdist(X, metric=metric)
+    D = distance.squareform(D)
+    D /= D.max()
+    return 1 - D
+
+
+def compute_nc(X, G):
+    """Computes the novelty curve from the self-similarity matrix X and
+        the gaussian kernel G."""
+    N = X.shape[0]
+    M = G.shape[0]
+    nc = np.zeros(N)
+
+    for i in xrange(M / 2, N - M / 2 + 1):
+        nc[i] = np.sum(X[i - M / 2:i + M / 2, i - M / 2:i + M / 2] * G)
+
+    # Normalize
+    nc += nc.min()
+    nc /= nc.max()
+    return nc
 
 
 def resample_mx(X, incolpos, outcolpos):
@@ -122,11 +156,3 @@ def chroma_to_tonnetz(C):
                 T[i, d] = 1 / denom * (phi[d, :] * C[i, :]).sum()
 
     return T
-
-
-def compute_ssm(X, metric="seuclidean"):
-    """Computes the self-similarity matrix of X."""
-    D = distance.pdist(X, metric=metric)
-    D = distance.squareform(D)
-    D /= D.max()
-    return 1 - D
