@@ -1,0 +1,15 @@
+0.000	0.394	silence
+0.394	21.780	intro
+21.780	38.917	first_verse
+38.917	55.910	second_verse
+55.910	64.418	refrain
+64.418	95.543	first_verse_variant
+95.543	112.300	second_verse
+112.300	120.645	refrain
+120.645	145.616	intro_redux
+145.616	156.502	refrain
+156.502	173.267	first_verse
+173.267	189.616	second_verse
+189.616	197.625	refrain
+197.625	273.283	outro
+273.283	277.067	silence

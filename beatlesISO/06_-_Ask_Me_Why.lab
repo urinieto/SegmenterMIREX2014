@@ -1,0 +1,11 @@
+0.000	0.459	silence
+0.459	3.878	intro
+3.878	26.895	verse_(initial)
+26.895	49.993	verse_(variant_1)
+49.993	64.171	bridge
+64.171	74.890	verse_(variant_2)
+74.890	98.348	verse_(initial)
+98.348	109.111	verse_(variant_2)
+109.111	123.234	bridge
+123.234	143.117	verse_(variant_2_with_ending)
+143.117	147.760	silence
