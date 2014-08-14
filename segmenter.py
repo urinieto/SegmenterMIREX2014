@@ -21,9 +21,11 @@ import fmc2d as fmc2d_S
 
 #### Algorithm Parameters ####
 # C-NMF
-h = 8           # Size of median filter for features in C-NMF
-R = 15          # Size of the median filter for the activation matrix C-NMF
-rank = 4        # Rank of decomposition for the boundaries
+h = 8               # Size of median filter for features in C-NMF
+R = 15              # Size of the median filter for the activation matrix C-NMF
+rank = 4            # Rank of decomposition for the boundaries
+rank_labels = 6     # Rank of decomposition for the labels
+R_labels = 6        # Size of the median filter for the labels
 # Foote
 M = 2           # Median filter for the audio features (in beats)
 Mg = 32         # Gaussian kernel size
@@ -84,7 +86,8 @@ def match_labels(bound_times, labels, audio_path):
     return new_labels
 
 
-def process(audio_path, out_path, bounds_type="cnmf", plot=False):
+def process(audio_path, out_path, bounds_type="cnmf", labels_type="2dfmc",
+            plot=False):
     """Main process to segment the audio file and save the results in the
         specified output."""
 
@@ -100,13 +103,21 @@ def process(audio_path, out_path, bounds_type="cnmf", plot=False):
         est_bound_idxs = foote_S.segmentation(F, M, Mg, L)
     elif bounds_type == "sf":
         est_bound_idxs = sf_S.segmentation(F)
+    else:
+        logging.error("Boundaries type '%s' not valid" % bounds_type)
 
     # Compute the labels from all the boundaries
     logging.info("Estimating Segment Similarity (Labeling)...")
     all_est_bound_idxs = np.unique(np.concatenate(([0], est_bound_idxs,
                                                    [len(F)])))
-    est_labels = fmc2d_S.compute_similarity(
-        feats["hpcp"], all_est_bound_idxs, xmeans=True, N=N)
+    if labels_type == "2dfmc":
+        est_labels = fmc2d_S.compute_similarity(
+            feats["hpcp"], all_est_bound_idxs, xmeans=True, N=N)
+    elif labels_type == "cnmf":
+        est_labels = cnmf_S.compute_labels(feats["hpcp"], rank_labels,
+                                           R_labels, all_est_bound_idxs)
+    else:
+        logging.error("Labels type '%s' not valid" % bounds_type)
 
     # Get boundary times while adding first and last boundary
     est_bound_times = np.concatenate(([feats["beats"][0]],
@@ -136,6 +147,13 @@ def main():
                         "boundaries",
                         default="cnmf",
                         choices=["cnmf", "foote", "sf"])
+    parser.add_argument("-s",
+                        action="store",
+                        dest="labels_type",
+                        help="Which algortihm to use to extract the "
+                        "segment similarity (labeling)",
+                        default="cnmf",
+                        choices=["cnmf", "2dfmc"])
     parser.add_argument("-o",
                         action="store",
                         dest="out_path",
@@ -149,7 +167,8 @@ def main():
         level=logging.INFO)
 
     # Run the algorithm
-    process(args.audio_path, args.out_path, bounds_type=args.bounds_type)
+    process(args.audio_path, args.out_path, bounds_type=args.bounds_type,
+            labels_type=args.labels_type)
 
     # Done!
     logging.info("Done! Took %.2f seconds." % (time.time() - start_time))

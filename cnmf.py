@@ -46,6 +46,36 @@ def cnmf(S, rank, niter=500):
     return F, G
 
 
+def most_frequent(x):
+    """Returns the most frequent value in x."""
+    return np.argmax(np.bincount(x))
+
+
+def compute_labels(X, rank, R, bound_idxs, niter=300):
+    """Computes the labels using the bounds."""
+
+    X = X.T
+    try:
+        F, G = cnmf(X, rank, niter=niter)
+    except:
+        return [1]
+
+    label_frames = filter_activation_matrix(G.T, R)
+    label_frames = np.asarray(label_frames, dtype=int)
+
+    # Get labels from the label frames
+    labels = []
+    bound_inters = zip(bound_idxs[:-1], bound_idxs[1:])
+    for bound_inter in bound_inters:
+        if bound_inter[1] - bound_inter[0] <= 0:
+            labels.append(np.max(label_frames) + 1)
+        else:
+            labels.append(most_frequent(
+                label_frames[bound_inter[0]:bound_inter[1]]))
+
+    return labels
+
+
 def filter_activation_matrix(G, R):
     """Filters the activation matrix G, and returns a flattened copy."""
     idx = np.argmax(G, axis=1)

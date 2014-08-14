@@ -19,16 +19,18 @@ import segmenter as S
 import utils
 
 
-def process_track(audio_file, out_path, bounds_type):
+def process_track(audio_file, out_path, bounds_type, labels_type):
     """Processes one track, for paralelization purposes."""
     logging.info("Segmenting %s" % audio_file)
 
     out_file = os.path.join(
         out_path, os.path.basename(audio_file).replace(".wav", ".lab"))
-    S.process(audio_file, out_file, bounds_type=bounds_type)
+    S.process(audio_file, out_file, bounds_type=bounds_type,
+              labels_type=labels_type)
 
 
-def process(in_path, out_path, bounds_type="cnmf", n_jobs=4):
+def process(in_path, out_path, bounds_type="cnmf", labels_type="cnmf",
+            n_jobs=4):
     """Main process."""
 
     # Make sure output folder exists
@@ -39,7 +41,7 @@ def process(in_path, out_path, bounds_type="cnmf", n_jobs=4):
 
     # Call in parallel
     Parallel(n_jobs=n_jobs)(delayed(process_track)(
-        audio_file, out_path, bounds_type)
+        audio_file, out_path, bounds_type, labels_type)
         for audio_file in audio_files)
 
 
@@ -64,6 +66,13 @@ def main():
                         "boundaries",
                         default="cnmf",
                         choices=["cnmf", "foote", "sf"])
+    parser.add_argument("-s",
+                        action="store",
+                        dest="labels_type",
+                        help="Which algortihm to use to extract the "
+                        "segment similarity (labeling)",
+                        default="cnmf",
+                        choices=["cnmf", "2dfmc"])
     parser.add_argument("-j",
                         action="store",
                         dest="n_jobs",
@@ -79,7 +88,7 @@ def main():
 
     # Run the algorithm
     process(args.in_path, args.out_path, bounds_type=args.bounds_type,
-            n_jobs=args.n_jobs)
+            labels_type=args.labels_type, n_jobs=args.n_jobs)
 
     # Done!
     logging.info("Done! Took %.2f seconds." % (time.time() - start_time))
