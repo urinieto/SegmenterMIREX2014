@@ -11,6 +11,7 @@ __email__ = "oriol@nyu.edu"
 import copy
 import numpy as np
 import os
+import scipy
 from scipy.spatial import distance
 from scipy.ndimage import filters
 from scipy import signal
@@ -80,6 +81,7 @@ def compute_nc(X, G):
 
 def resample_mx(X, incolpos, outcolpos):
     """
+    Method from Librosa
     Y = resample_mx(X, incolpos, outcolpos)
     X is taken as a set of columns, each starting at 'time'
     colpos, and continuing until the start of the next column.
@@ -175,3 +177,96 @@ def pick_peaks(nc, L=16, plot=False):
             plt.axvline(peak, color="m")
         plt.show()
     return peaks
+
+
+def recurrence_matrix(data, k=None, width=1, metric='sqeuclidean', sym=False):
+    '''
+    Note: Copied from librosa
+
+    Compute the binary recurrence matrix from a time-series.
+
+    ``rec[i,j] == True`` <=> (``data[:,i]``, ``data[:,j]``) are
+    k-nearest-neighbors and ``|i-j| >= width``
+
+    :usage:
+        >>> mfcc    = librosa.feature.mfcc(y=y, sr=sr)
+        >>> R       = librosa.segment.recurrence_matrix(mfcc)
+
+        >>> # Or fix the number of nearest neighbors to 5
+        >>> R       = librosa.segment.recurrence_matrix(mfcc, k=5)
+
+        >>> # Suppress neighbors within +- 7 samples
+        >>> R       = librosa.segment.recurrence_matrix(mfcc, width=7)
+
+        >>> # Use cosine similarity instead of Euclidean distance
+        >>> R       = librosa.segment.recurrence_matrix(mfcc, metric='cosine')
+
+        >>> # Require mutual nearest neighbors
+        >>> R       = librosa.segment.recurrence_matrix(mfcc, sym=True)
+
+    :parameters:
+      - data : np.ndarray
+          feature matrix (d-by-t)
+
+      - k : int > 0 or None
+          the number of nearest-neighbors for each sample
+
+          Default: ``k = 2 * ceil(sqrt(t - 2 * width + 1))``,
+          or ``k = 2`` if ``t <= 2 * width + 1``
+
+      - width : int > 0
+          only link neighbors ``(data[:, i], data[:, j])``
+          if ``|i-j| >= width``
+
+      - metric : str
+          Distance metric to use for nearest-neighbor calculation.
+
+          See ``scipy.spatial.distance.cdist()`` for details.
+
+      - sym : bool
+          set ``sym=True`` to only link mutual nearest-neighbors
+
+    :returns:
+      - rec : np.ndarray, shape=(t,t), dtype=bool
+          Binary recurrence matrix
+    '''
+
+    t = data.shape[1]
+
+    if k is None:
+        if t > 2 * width + 1:
+            k = 2 * np.ceil(np.sqrt(t - 2 * width + 1))
+        else:
+            k = 2
+
+    k = int(k)
+
+    def _band_infinite():
+        '''Suppress the diagonal+- of a distance matrix'''
+
+        band = np.empty((t, t))
+        band.fill(np.inf)
+        band[np.triu_indices_from(band, width)] = 0
+        band[np.tril_indices_from(band, -width)] = 0
+
+        return band
+
+    # Build the distance matrix
+    D = scipy.spatial.distance.cdist(data.T, data.T, metric=metric)
+
+    # Max out the diagonal band
+    D = D + _band_infinite()
+
+    # build the recurrence plot
+    rec = np.zeros((t, t), dtype=bool)
+
+    # get the k nearest neighbors for each point
+    for i in range(t):
+        for j in np.argsort(D[i])[:k]:
+            rec[i, j] = True
+
+    # symmetrize
+    if sym:
+        rec = rec * rec.T
+
+    return rec

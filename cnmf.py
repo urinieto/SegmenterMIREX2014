@@ -58,7 +58,7 @@ def filter_activation_matrix(G, R):
     return G.flatten()
 
 
-def cnmf_segmentation(X, rank, R, h, niter=300):
+def segmentation(X, rank, R, h, niter=300):
     """
     Gets the segmentation (boundaries and labels) from the factorization
     matrices.

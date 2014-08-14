@@ -16,7 +16,7 @@ __email__ = "oriol@nyu.edu"
 import utils
 
 
-def foote_segmentation(F, M, Mg, L, plot=False):
+def segmentation(F, M, Mg, L, plot=False):
     """Computes the Foote segmentator.
 
     Parameters

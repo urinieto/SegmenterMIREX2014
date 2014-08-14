@@ -15,6 +15,7 @@ import features
 # Local stuff
 import cnmf as cnmf_S
 import foote as foote_S
+import sf as sf_S
 import fmc2d as fmc2d_S
 
 
@@ -34,7 +35,8 @@ N = 8          # Size of the fixed length segments (for 2D-FMC)
 def write_results(out_path, bound_times, labels):
     """Writes the results into the output file."""
     # Sanity check
-    assert len(bound_times) - 1 == len(labels)
+    assert len(bound_times) - 1 == len(labels), "Number of boundaries and " \
+        "labels don't match for file %s" % out_path
 
     logging.info("Writing results in %s..." % out_path)
 
@@ -66,7 +68,7 @@ def write_results(out_path, bound_times, labels):
     #return ref_idxs
 
 
-def process(audio_path, out_path, foote=False, plot=False):
+def process(audio_path, out_path, bounds_type="cnmf", plot=False):
     """Main process to segment the audio file and save the results in the
         specified output."""
 
@@ -76,10 +78,12 @@ def process(audio_path, out_path, foote=False, plot=False):
 
     # Estimate bounds_idx
     logging.info("Estimating Boundaries...")
-    if foote:
-        est_bound_idxs = foote_S.foote_segmentation(F, M, Mg, L)
-    else:
-        est_bound_idxs = cnmf_S.cnmf_segmentation(F, rank=rank, R=R, h=h)
+    if bounds_type == "cnmf":
+        est_bound_idxs = cnmf_S.segmentation(F, rank=rank, R=R, h=h)
+    elif bounds_type == "foote":
+        est_bound_idxs = foote_S.segmentation(F, M, Mg, L)
+    elif bounds_type == "sf":
+        est_bound_idxs = sf_S.segmentation(F)
 
     # Compute the labels from all the boundaries
     logging.info("Estimating Segment Similarity (Labeling)...")
@@ -106,11 +110,13 @@ def main():
     parser.add_argument("audio_path",
                         action="store",
                         help="Path to the input audio file")
-    parser.add_argument("-f",
-                        action="store_true",
-                        dest="foote",
-                        help="Use the Foote method for segmentation",
-                        default=False)
+    parser.add_argument("-b",
+                        action="store",
+                        dest="bounds_type",
+                        help="Which algortihm to use to extract the "
+                        "boundaries",
+                        default="cnmf",
+                        choices=["cnmf", "foote", "sf"])
     parser.add_argument("-o",
                         action="store",
                         dest="out_path",
@@ -124,7 +130,7 @@ def main():
         level=logging.INFO)
 
     # Run the algorithm
-    process(args.audio_path, args.out_path, foote=args.foote)
+    process(args.audio_path, args.out_path, bounds_type=args.bounds_type)
 
     # Done!
     logging.info("Done! Took %.2f seconds." % (time.time() - start_time))

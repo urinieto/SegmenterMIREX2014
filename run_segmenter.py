@@ -19,16 +19,16 @@ import segmenter as S
 import utils
 
 
-def process_track(audio_file, out_path, foote):
+def process_track(audio_file, out_path, bounds_type):
     """Processes one track, for paralelization purposes."""
     logging.info("Segmenting %s" % audio_file)
 
     out_file = os.path.join(
         out_path, os.path.basename(audio_file).replace(".wav", ".lab"))
-    S.process(audio_file, out_file, foote=foote)
+    S.process(audio_file, out_file, bounds_type=bounds_type)
 
 
-def process(in_path, out_path, foote=False, n_jobs=4):
+def process(in_path, out_path, bounds_type="cnmf", n_jobs=4):
     """Main process."""
 
     # Make sure output folder exists
@@ -39,7 +39,7 @@ def process(in_path, out_path, foote=False, n_jobs=4):
 
     # Call in parallel
     Parallel(n_jobs=n_jobs)(delayed(process_track)(
-        audio_file, out_path, foote)
+        audio_file, out_path, bounds_type)
         for audio_file in audio_files)
 
 
@@ -57,11 +57,13 @@ def main():
                         dest="out_path",
                         default="estimations",
                         help="Output folder to store the lab files")
-    parser.add_argument("-f",
-                        action="store_true",
-                        dest="foote",
-                        help="Use the Foote method for segmentation",
-                        default=False)
+    parser.add_argument("-b",
+                        action="store",
+                        dest="bounds_type",
+                        help="Which algortihm to use to extract the "
+                        "boundaries",
+                        default="cnmf",
+                        choices=["cnmf", "foote", "sf"])
     parser.add_argument("-j",
                         action="store",
                         dest="n_jobs",
@@ -76,7 +78,8 @@ def main():
         level=logging.INFO)
 
     # Run the algorithm
-    process(args.in_path, args.out_path, foote=args.foote, n_jobs=args.n_jobs)
+    process(args.in_path, args.out_path, bounds_type=args.bounds_type,
+            n_jobs=args.n_jobs)
 
     # Done!
     logging.info("Done! Took %.2f seconds." % (time.time() - start_time))
