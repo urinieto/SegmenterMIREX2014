@@ -6,6 +6,7 @@ import argparse
 import glob
 import logging
 import os
+import sys
 import time
 import pandas as pd
 from joblib import Parallel, delayed
@@ -13,9 +14,12 @@ from joblib import Parallel, delayed
 import mir_eval
 
 
-def eval_track(ref_file, est_file):
+def eval_track(ref_file, est_file, i=-1, N=-1):
     """Evaluates a single file."""
-    #logging.info("Evaluating %s" % est_file)
+    # Progress bar
+    sys.stdout.write("\r%.1f %%" % (100 * i / float(N)))
+    sys.stdout.flush()
+
     assert os.path.basename(ref_file) == os.path.basename(est_file)
 
     # Read intervals
@@ -64,20 +68,25 @@ def process(ref_path, est_path, n_jobs=4):
     """Evaluates the segmentator using mir_eval."""
     ref_files = glob.glob(os.path.join(ref_path, "*.lab"))
     est_files = glob.glob(os.path.join(est_path, "*.lab"))
+    logging.info("Evaluating %d files..." % len(ref_files))
 
     # Data frame to store all the results
     results = pd.DataFrame()
 
     # Compute evaluations in parallel
     evals = Parallel(n_jobs=n_jobs)(delayed(eval_track)(
-        ref_file, est_file)
-        for ref_file, est_file in zip(ref_files, est_files))
+        ref_file, est_file, i, len(ref_files))
+        for i, (ref_file, est_file) in enumerate(zip(ref_files, est_files)))
 
     # Collect results
     for e in evals:
         if e != []:
             results = results.append(e, ignore_index=True)
 
+    # Print out
+    sys.stdout.write("\r")
+    sys.stdout.flush()
+    logging.info("Results:")
     print results.mean()
 
 

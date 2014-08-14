@@ -3,6 +3,7 @@
 
 import argparse
 import numpy as np
+import logging
 import time
 import pylab as plt
 import scipy.cluster.vq as vq
@@ -118,7 +119,7 @@ class XMeans:
                     finalK = K[i]
                     break
 
-        print "Estimated K: ", finalK
+        logging.info("Estimated Unique Number of Segments: %d" % finalK)
         if self.plot:
             plt.subplot(2, 1, 1)
             plt.plot(K, bics, label="BIC")

@@ -35,8 +35,9 @@ N = 8          # Size of the fixed length segments (for 2D-FMC)
 def write_results(out_path, bound_times, labels):
     """Writes the results into the output file."""
     # Sanity check
-    assert len(bound_times) - 1 == len(labels), "Number of boundaries and " \
-        "labels don't match for file %s" % out_path
+    assert len(bound_times) - 1 == len(labels), "Number of boundaries (%d) " \
+        "and labels (%d) don't match for file %s" % (len(bound_times),
+                                                     len(labels), out_path)
 
     logging.info("Writing results in %s..." % out_path)
 
@@ -68,6 +69,21 @@ def write_results(out_path, bound_times, labels):
     #return ref_idxs
 
 
+def match_labels(bound_times, labels, audio_path):
+    """Matches the number of bounds with the number of labels."""
+    new_labels = labels
+    if len(bound_times) > len(labels) + 1:
+        logging.warning("More boundaries than labels, matching... %s" %
+                        audio_path)
+        new_labels = np.ones(len(bound_times) - 1) * len(labels)
+        new_labels[:len(labels)] = labels
+    elif len(bound_times) < len(labels) + 1:
+        logging.warning("More labels than boundaries, matching... %s" %
+                        audio_path)
+        new_labels = labels[:len(bound_times) - 1]
+    return new_labels
+
+
 def process(audio_path, out_path, bounds_type="cnmf", plot=False):
     """Main process to segment the audio file and save the results in the
         specified output."""
@@ -97,6 +113,9 @@ def process(audio_path, out_path, bounds_type="cnmf", plot=False):
                                       feats["beats"][est_bound_idxs],
                                       [feats["beats"][-1]]))
     est_bound_times = np.unique(est_bound_times)
+
+    # Match boundaries with labels (just in case)
+    est_labels = match_labels(est_bound_times, est_labels, audio_path)
 
     # Write results
     write_results(out_path, est_bound_times, est_labels)
