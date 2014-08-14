@@ -25,13 +25,6 @@ def lognormalize_chroma(C):
     return C
 
 
-def normalize_chroma(C):
-    """Normalizes chroma such that each vector is between 0 to 1."""
-    C += np.abs(C.min())
-    C = C/C.max(axis=0)
-    return C
-
-
 def normalize_matrix(X):
     """Nomalizes a matrix such that it's maximum value is 1 and minimum is 0."""
     X += np.abs(X.min())
