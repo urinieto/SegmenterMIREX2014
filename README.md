@@ -58,4 +58,4 @@ Requirements
 Author
 ------
 
-[Oriol Nieto](https://files.nyu.edu/onc202/public/) <oriol@nyu.edu>
+[Oriol Nieto](https://files.nyu.edu/onc202/public/) (<oriol@nyu.edu>)
