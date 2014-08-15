@@ -55,6 +55,25 @@ Requirements
 * mir_eval (for evaluating only)
 * Pandas 0.14.1 (for evaluating only)
 
+References
+----------
+
+Foote, J. (2000). Automatic Audio Segmentation Using a Measure Of Audio Novelty. 
+In Proc. of the IEEE International Conference of Multimedia and Expo (pp. 452–455). 
+New York City, NY, USA.
+
+Nieto, O., & Bello, J. P. (2014). Music Segment Similarity Using 2D-Fourier Magnitude Coefficients. 
+In Proc. of the 39th IEEE International Conference on Acoustics Speech and Signal Processing (pp. 664–668). 
+Florence, Italy.
+
+Nieto, O., & Jehan, T. (2013). Convex Non-Negative Matrix Factorization For Automatic Music Structure Identification. 
+In Proc. of the 38th IEEE International Conference on Acoustics Speech and Signal Processing (pp. 236–240). 
+Vancouver, Canada.
+
+Serrà, J., Müller, M., Grosche, P., & Arcos, J. L. (2014). Unsupervised Music Structure Annotation by Time Series Structure Features and Segment Similarity. 
+IEEE Transactions on Multimedia, Special Issue on Music Data Mining, 16(5), 1229 – 1240. 
+doi:10.1109/TMM.2014.2310701
+
 Author
 ------
 
