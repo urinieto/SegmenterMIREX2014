@@ -40,14 +40,14 @@ def eval_track(ref_file, est_file, i=-1, N=-1):
 
     # Boundary Eval
     evals["Hit05_P"], evals["Hit05_R"], evals["Hit05_F"] = \
-        mir_eval.boundary.detection(ref_inters, est_inters, window=0.5)
+        mir_eval.segment.detection(ref_inters, est_inters, window=0.5)
     evals["Hit3_P"], evals["Hit3_R"], evals["Hit3_F"] = \
-        mir_eval.boundary.detection(ref_inters, est_inters, window=3)
+        mir_eval.segment.detection(ref_inters, est_inters, window=3)
     evals["Hit05t_P"], evals["Hit05t_R"], evals["Hit05t_F"] = \
-        mir_eval.boundary.detection(ref_inters, est_inters, window=0.5,
+        mir_eval.segment.detection(ref_inters, est_inters, window=0.5,
                                     trim=True)
     evals["Hit3t_P"], evals["Hit3t_R"], evals["Hit3t_F"] = \
-        mir_eval.boundary.detection(ref_inters, est_inters, window=3,
+        mir_eval.segment.detection(ref_inters, est_inters, window=3,
                                     trim=True)
 
     # Similarity Eval
@@ -56,10 +56,10 @@ def eval_track(ref_file, est_file, i=-1, N=-1):
     est_inters, est_labels = mir_eval.util.adjust_intervals(
         est_inters, est_labels, t_min=0, t_max=ref_inters.max())
     evals["Pwf_P"], evals["Pwf_R"], evals["Pwf_F"] = \
-        mir_eval.structure.pairwise(ref_inters, ref_labels,
+        mir_eval.segment.pairwise(ref_inters, ref_labels,
                                     est_inters, est_labels)
     evals["NCE_o"], evals["NCE_u"], evals["NCE_F"] = \
-        mir_eval.structure.nce(ref_inters, ref_labels,
+        mir_eval.segment.nce(ref_inters, ref_labels,
                                est_inters, est_labels)
     return evals
 
