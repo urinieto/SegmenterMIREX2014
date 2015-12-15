@@ -17,6 +17,7 @@ import numpy as np
 import logging
 import logging.config
 import scipy.sparse
+import random
 
 __all__ = ["NMF"]
 
@@ -68,7 +69,7 @@ class NMF():
     # some small value
     _EPS = 10**-8
     
-    def __init__(self, data, num_bases=4):
+    def __init__(self, data, num_bases=4, seed=None):
         
         def setup_logging():
             # create logger       
@@ -92,9 +93,13 @@ class NMF():
         # set variables
         self.data = data       
         self._num_bases = num_bases             
+        self.seed = seed
       
         # initialize H and W to random values
         (self._data_dimension, self._num_samples) = self.data.shape
+        if self.seed != None:
+            np.random.seed(self.seed)
+            random.seed(self.seed)
         
 
     def frobenius_norm(self):

@@ -23,7 +23,6 @@ from xmeans import XMeans
 
 MIN_LEN = 4     # Minimum lenght for the segments
 
-
 def get_pcp_segments(PCP, bound_idxs):
     """Returns a set of segments defined by the bound_idxs."""
     pcp_segments = []
@@ -92,7 +91,7 @@ def compute_labels_kmeans(fmcs, k=6):
     return labels
 
 
-def compute_similarity(PCP, bound_idxs, xmeans=False, k=5, N=32):
+def compute_similarity(PCP, bound_idxs, xmeans=False, k=5, N=32, seed=None):
     """Main function to compute the segment similarity of file file_struct."""
 
     # Get PCP segments
@@ -105,7 +104,7 @@ def compute_similarity(PCP, bound_idxs, xmeans=False, k=5, N=32):
 
     # Compute the labels using kmeans
     if xmeans:
-        xm = XMeans(fmcs, plot=False)
+        xm = XMeans(fmcs, plot=False, seed=seed)
         k = xm.estimate_K_knee(th=0.01, maxK=8)
     est_labels = compute_labels_kmeans(fmcs, k=k)
 

@@ -11,10 +11,12 @@ from scipy.spatial import distance
 
 
 class XMeans:
-    def __init__(self, X, init_K=2, plot=False):
+    def __init__(self, X, init_K=2, plot=False, seed=None):
         self.X = X
         self.init_K = init_K
         self.plot = plot
+        if seed != None:
+            np.random.seed(seed)
 
     def estimate_K_xmeans(self, th=0.2, maxK = 10):
         """Estimates K running X-means algorithm (Pelleg & Moore, 2000)."""

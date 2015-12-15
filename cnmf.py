@@ -18,8 +18,7 @@ import pymf
 # Local stuff
 import utils
 
-
-def cnmf(S, rank, niter=500):
+def cnmf(S, rank, niter=500, seed=None):
     """(Convex) Non-Negative Matrix Factorization.
 
     Parameters
@@ -39,7 +38,7 @@ def cnmf(S, rank, niter=500):
         Activation matrix (decomposed matrix)
         (s.t. S ~= F * G)
     """
-    nmf_mdl = pymf.CNMF(S, num_bases=rank)
+    nmf_mdl = pymf.CNMF(S, num_bases=rank, seed=seed)
     nmf_mdl.factorize(niter=niter)
     F = np.asarray(nmf_mdl.W)
     G = np.asarray(nmf_mdl.H)
@@ -51,12 +50,12 @@ def most_frequent(x):
     return np.argmax(np.bincount(x))
 
 
-def compute_labels(X, rank, R, bound_idxs, niter=300):
+def compute_labels(X, rank, R, bound_idxs, niter=300, seed=None):
     """Computes the labels using the bounds."""
 
     X = X.T
     try:
-        F, G = cnmf(X, rank, niter=niter)
+        F, G = cnmf(X, rank, niter=niter, seed=seed)
     except:
         return [1]
 
@@ -88,7 +87,7 @@ def filter_activation_matrix(G, R):
     return G.flatten()
 
 
-def segmentation(X, rank, R, h, niter=300):
+def segmentation(X, rank, R, h, niter=300, seed=None):
     """
     Gets the segmentation (boundaries and labels) from the factorization
     matrices.
@@ -123,7 +122,7 @@ def segmentation(X, rank, R, h, niter=300):
     while True:
         if bound_idxs is None:
             try:
-                F, G = cnmf(X, rank, niter=niter)
+                F, G = cnmf(X, rank, niter=niter, seed=seed)
             except:
                 return np.empty(0), [1]
 
