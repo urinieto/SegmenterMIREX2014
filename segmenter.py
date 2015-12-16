@@ -87,7 +87,7 @@ def match_labels(bound_times, labels, audio_path):
 
 
 def process(audio_path, out_path, bounds_type="cnmf", labels_type="2dfmc",
-            plot=False):
+            plot=False, seed=None):
     """Main process to segment the audio file and save the results in the
         specified output."""
 
@@ -98,7 +98,7 @@ def process(audio_path, out_path, bounds_type="cnmf", labels_type="2dfmc",
     # Estimate bounds_idx
     logging.info("Estimating Boundaries...")
     if bounds_type == "cnmf":
-        est_bound_idxs = cnmf_S.segmentation(F, rank=rank, R=R, h=h)
+        est_bound_idxs = cnmf_S.segmentation(F, rank=rank, R=R, h=h, seed=seed)
     elif bounds_type == "foote":
         est_bound_idxs = foote_S.segmentation(F, M, Mg, L)
     elif bounds_type == "sf":
@@ -112,10 +112,11 @@ def process(audio_path, out_path, bounds_type="cnmf", labels_type="2dfmc",
                                                    [len(F)])))
     if labels_type == "2dfmc":
         est_labels = fmc2d_S.compute_similarity(
-            feats["hpcp"], all_est_bound_idxs, xmeans=True, N=N)
+            feats["hpcp"], all_est_bound_idxs, xmeans=True, N=N, seed=seed)
     elif labels_type == "cnmf":
         est_labels = cnmf_S.compute_labels(feats["hpcp"], rank_labels,
-                                           R_labels, all_est_bound_idxs)
+                                           R_labels, all_est_bound_idxs, 
+                                           seed=seed)
     else:
         logging.error("Labels type '%s' not valid" % bounds_type)
 
@@ -140,6 +141,11 @@ def main():
     parser.add_argument("audio_path",
                         action="store",
                         help="Path to the input audio file")
+    parser.add_argument("-r",
+                        dest="random_seed",
+                        action="store",
+                        default=None,
+                        help="Random Seed")
     parser.add_argument("-b",
                         action="store",
                         dest="bounds_type",
@@ -168,7 +174,7 @@ def main():
 
     # Run the algorithm
     process(args.audio_path, args.out_path, bounds_type=args.bounds_type,
-            labels_type=args.labels_type)
+            labels_type=args.labels_type, seed=args.random_seed)
 
     # Done!
     logging.info("Done! Took %.2f seconds." % (time.time() - start_time))

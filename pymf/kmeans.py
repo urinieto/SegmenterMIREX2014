@@ -15,7 +15,6 @@ import dist
 from nmf import NMF
 
 __all__ = ["Kmeans"]
-
 class Kmeans(NMF):
     """      
     Kmeans(data, num_bases=4)

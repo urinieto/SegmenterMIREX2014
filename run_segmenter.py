@@ -19,18 +19,18 @@ import segmenter as S
 import utils
 
 
-def process_track(audio_file, out_path, bounds_type, labels_type):
+def process_track(audio_file, out_path, bounds_type, labels_type, seed):
     """Processes one track, for paralelization purposes."""
     logging.info("Segmenting %s" % audio_file)
 
     out_file = os.path.join(
         out_path, os.path.basename(audio_file).replace(".wav", ".lab"))
     S.process(audio_file, out_file, bounds_type=bounds_type,
-              labels_type=labels_type)
+              labels_type=labels_type, seed=seed)
 
 
 def process(in_path, out_path, bounds_type="cnmf", labels_type="cnmf",
-            n_jobs=4):
+            n_jobs=4, seed=None):
     """Main process."""
 
     # Make sure output folder exists
@@ -41,7 +41,7 @@ def process(in_path, out_path, bounds_type="cnmf", labels_type="cnmf",
 
     # Call in parallel
     Parallel(n_jobs=n_jobs)(delayed(process_track)(
-        audio_file, out_path, bounds_type, labels_type)
+        audio_file, out_path, bounds_type, labels_type, seed)
         for audio_file in audio_files)
 
 
@@ -54,6 +54,12 @@ def main():
     parser.add_argument("in_path",
                         action="store",
                         help="Folder to Wav Files")
+    parser.add_argument("-r",
+                        dest="random_seed",
+                        action="store",
+                        type=int,
+                        default=None,
+                        help="Random Seed")
     parser.add_argument("-o",
                         action="store",
                         dest="out_path",
@@ -88,7 +94,7 @@ def main():
 
     # Run the algorithm
     process(args.in_path, args.out_path, bounds_type=args.bounds_type,
-            labels_type=args.labels_type, n_jobs=args.n_jobs)
+            labels_type=args.labels_type, n_jobs=args.n_jobs, seed=args.random_seed)
 
     # Done!
     logging.info("Done! Took %.2f seconds." % (time.time() - start_time))

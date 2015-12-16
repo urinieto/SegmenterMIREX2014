@@ -81,7 +81,7 @@ class CNMF(NMF):
             self.H = np.zeros((self._num_bases, self._num_samples))
             
             # initialize using k-means
-            km = Kmeans(self.data[:,:], num_bases=self._num_bases)        
+            km = Kmeans(self.data[:,:], num_bases=self._num_bases, seed=self.seed)        
             km.factorize(niter=10)
             assign = km.assigned
     
